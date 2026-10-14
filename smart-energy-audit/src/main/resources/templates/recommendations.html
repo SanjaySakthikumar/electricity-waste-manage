@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Energy Recommendations | ECOPULSE</title>
+
+    <style>
+        :root {
+            --bg: #f6f7f9;
+            --surface: #ffffff;
+            --text: #202832;
+            --muted: #687386;
+            --border: #e2e6ec;
+            --accent: #315c74;
+            --soft: #edf3f6;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: Arial, Helvetica, sans-serif;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 32px 22px;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .brand {
+            font-size: 23px;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+
+        .brand span {
+            color: var(--accent);
+        }
+
+        .back-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .eyebrow {
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            margin: 8px 0;
+            font-size: clamp(28px, 4vw, 38px);
+            line-height: 1.2;
+        }
+
+        h2 {
+            font-size: 19px;
+            margin-top: 0;
+        }
+
+        .intro {
+            color: var(--muted);
+            max-width: 760px;
+            margin-bottom: 28px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .summary-card,
+        .panel,
+        .recommendation-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+        }
+
+        .summary-card {
+            padding: 20px;
+        }
+
+        .summary-label {
+            display: block;
+            color: var(--muted);
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+
+        .summary-value {
+            font-size: 25px;
+            font-weight: 750;
+            overflow-wrap: anywhere;
+        }
+
+        .summary-unit {
+            display: block;
+            color: var(--muted);
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .section-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .count {
+            background: var(--soft);
+            color: var(--accent);
+            border-radius: 20px;
+            padding: 5px 11px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .recommendation-list {
+            display: grid;
+            gap: 18px;
+        }
+
+        .recommendation-card {
+            padding: 24px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 15px;
+            margin-bottom: 14px;
+        }
+
+        .rank {
+            color: var(--accent);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+
+        .card-title {
+            margin: 5px 0;
+            font-size: 20px;
+        }
+
+        .room-label {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .priority {
+            flex-shrink: 0;
+            background: var(--soft);
+            color: var(--accent);
+            border-radius: 20px;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .description {
+            color: #4e5968;
+            margin: 12px 0 20px;
+        }
+
+        .comparison {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .comparison-box {
+            padding: 15px;
+            background: #fafbfc;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+        }
+
+        .comparison-box span,
+        .metric span {
+            display: block;
+            color: var(--muted);
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .comparison-box strong {
+            font-size: 16px;
+            overflow-wrap: anywhere;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
+            border-top: 1px solid var(--border);
+            padding-top: 18px;
+        }
+
+        .metric strong {
+            font-size: 17px;
+            overflow-wrap: anywhere;
+        }
+
+        .reason {
+            margin: 18px 0 0;
+            padding: 12px 14px;
+            background: #f7f8fa;
+            border-radius: 8px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .panel {
+            margin-top: 26px;
+            padding: 24px;
+        }
+
+        .panel p {
+            color: var(--muted);
+            margin-bottom: 0;
+        }
+
+        .empty-state {
+            padding: 40px 20px;
+            text-align: center;
+            border: 1px dashed #cbd3dc;
+            border-radius: 14px;
+            background: white;
+        }
+
+        .empty-state p {
+            color: var(--muted);
+        }
+
+        .footer {
+            text-align: center;
+            color: var(--muted);
+            font-size: 12px;
+            padding: 30px 0 10px;
+        }
+
+        @media (max-width: 900px) {
+            .summary-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .metrics {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 560px) {
+            .container {
+                padding: 22px 14px;
+            }
+
+            .topbar,
+            .card-header {
+                align-items: flex-start;
+            }
+
+            .summary-grid,
+            .comparison,
+            .metrics {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .summary-value {
+                font-size: 21px;
+            }
+
+            .recommendation-card {
+                padding: 17px;
+            }
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            .container {
+                max-width: none;
+                padding: 0;
+            }
+
+            .back-link,
+            .print-button {
+                display: none;
+            }
+
+            .summary-card,
+            .recommendation-card,
+            .panel {
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<main class="container">
+
+    <header class="topbar">
+        <div class="brand">ECO<span>PULSE</span></div>
+        <a class="back-link" th:href="@{/}">← Back to Dashboard</a>
+    </header>
+
+    <section>
+        <div class="eyebrow">Energy audit / Optimisation</div>
+        <h1>Energy Recommendations</h1>
+        <p class="intro">
+            Review potential appliance-efficiency improvements, estimated
+            monthly energy savings and indicative implementation costs.
+            Recommendations are ranked by their calculated priority.
+        </p>
+    </section>
+
+    <section class="summary-grid">
+        <article class="summary-card">
+            <span class="summary-label">Potential energy savings</span>
+            <div class="summary-value"
+                 th:text="${#numbers.formatDecimal(totalSavingsKwh, 1, 2)}">
+                0.00
+            </div>
+            <span class="summary-unit">kWh per month</span>
+        </article>
+
+        <article class="summary-card">
+            <span class="summary-label">Potential bill savings</span>
+            <div class="summary-value"
+                 th:text="'₹' + ${#numbers.formatDecimal(totalSavingsRupees, 1, 2)}">
+                ₹0.00
+            </div>
+            <span class="summary-unit">Estimated per month</span>
+        </article>
+
+        <article class="summary-card">
+            <span class="summary-label">Indicative investment</span>
+            <div class="summary-value"
+                 th:text="'₹' + ${#numbers.formatDecimal(totalCost, 1, 2)}">
+                ₹0.00
+            </div>
+            <span class="summary-unit">Estimated total cost</span>
+        </article>
+
+        <article class="summary-card">
+            <span class="summary-label">Simple payback</span>
+            <div class="summary-value"
+                 th:text="${totalSavingsRupees > 0
+                    ? #numbers.formatDecimal(paybackMonths, 1, 1)
+                    : 'N/A'}">
+                N/A
+            </div>
+            <span class="summary-unit">Months, if savings are realised</span>
+        </article>
+    </section>
+
+    <section>
+        <div class="section-heading">
+            <h2>Ranked improvement opportunities</h2>
+            <span class="count"
+                  th:text="${#lists.size(autoRecommendations)} + ' items'">
+                0 items
+            </span>
+        </div>
+
+        <div class="empty-state" th:if="${#lists.isEmpty(autoRecommendations)}">
+            <h2>No appliance recommendations yet</h2>
+            <p>
+                Add appliances with their rated power, quantity and usage
+                schedule to generate recommendations.
+            </p>
+            <a class="back-link" th:href="@{/appliances}">
+                Go to Appliances →
+            </a>
+        </div>
+
+        <div class="recommendation-list"
+             th:unless="${#lists.isEmpty(autoRecommendations)}">
+
+            <article class="recommendation-card"
+                     th:each="item : ${autoRecommendations}">
+
+                <div class="card-header">
+                    <div>
+                        <div class="rank"
+                             th:text="'PRIORITY #' + ${item.rank}">
+                            PRIORITY #1
+                        </div>
+
+                        <h3 class="card-title" th:text="${item.title}">
+                            Efficiency improvement
+                        </h3>
+
+                        <div class="room-label">
+                            Room:
+                            <span th:text="${item.room}">Not specified</span>
+                        </div>
+                    </div>
+
+                    <span class="priority"
+                          th:text="${item.practicality >= 4
+                            ? 'High practicality'
+                            : item.practicality == 3
+                                ? 'Moderate practicality'
+                                : 'Review required'}">
+                        Review required
+                    </span>
+                </div>
+
+                <p class="description" th:text="${item.description}">
+                    Suggested improvement description.
+                </p>
+
+                <div class="comparison">
+                    <div class="comparison-box">
+                        <span>Current appliance</span>
+                        <strong th:text="${item.applianceName}">
+                            Current appliance
+                        </strong>
+                        <div>
+                            <span th:text="${#numbers.formatDecimal(item.ratedPowerWatts, 1, 1)}
+                                + ' W rated power'">
+                                0 W rated power
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="comparison-box">
+                        <span>Suggested comparison</span>
+                        <strong th:text="${item.suggestedApplianceName}">
+                            Suggested appliance
+                        </strong>
+                        <div>
+                            <span th:text="${#numbers.formatDecimal(item.suggestedPowerWatts, 1, 1)}
+                                + ' W assumed power'">
+                                0 W assumed power
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metrics">
+                    <div class="metric">
+                        <span>Current monthly use</span>
+                        <strong th:text="${#numbers.formatDecimal(item.currentMonthlyKwh, 1, 2)}
+                            + ' kWh'">
+                            0 kWh
+                        </strong>
+                    </div>
+
+                    <div class="metric">
+                        <span>Estimated savings</span>
+                        <strong th:text="${#numbers.formatDecimal(item.estimatedSavingsKwh, 1, 2)}
+                            + ' kWh'">
+                            0 kWh
+                        </strong>
+                    </div>
+
+                    <div class="metric">
+                        <span>Monthly cost savings</span>
+                        <strong th:text="'₹' + ${#numbers.formatDecimal(item.estimatedSavingsRupees, 1, 2)}">
+                            ₹0.00
+                        </strong>
+                    </div>
+
+                    <div class="metric">
+                        <span>Indicative investment</span>
+                        <strong th:text="'₹' + ${#numbers.formatDecimal(item.implementationCost, 1, 2)}">
+                            ₹0.00
+                        </strong>
+                    </div>
+                </div>
+
+                <div class="metrics" style="margin-top: 16px;">
+                    <div class="metric">
+                        <span>Quantity</span>
+                        <strong th:text="${item.quantity}">1</strong>
+                    </div>
+
+                    <div class="metric">
+                        <span>Hours per day</span>
+                        <strong th:text="${item.hoursPerDay}">0</strong>
+                    </div>
+
+                    <div class="metric">
+                        <span>Days per month</span>
+                        <strong th:text="${item.daysPerMonth}">0</strong>
+                    </div>
+
+                    <div class="metric">
+                        <span>Estimated payback</span>
+                        <strong th:text="${item.estimatedSavingsRupees > 0
+                            ? #numbers.formatDecimal(item.paybackMonths, 1, 1) + ' months'
+                            : 'N/A'}">
+                            N/A
+                        </strong>
+                    </div>
+                </div>
+
+                <p class="reason" th:text="${item.rankingReason}">
+                    Recommendation ranking explanation.
+                </p>
+            </article>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>Calculation method and limitations</h2>
+        <p>
+            Monthly energy (kWh) = rated power (W) × quantity × hours per day
+            × days per month ÷ 1000. Estimated monetary savings use the
+            configured electricity tariff or the latest bill's average
+            cost per kWh when available.
+        </p>
+        <p>
+            This is a rule-based estimate, not a trained AI prediction or a
+            direct measurement of individual appliance consumption. Suggested
+            replacement power ratings, costs and savings are assumptions.
+            Confirm product specifications and actual operating conditions
+            before making purchase decisions.
+        </p>
+    </section>
+
+    <p class="print-button" style="margin-top: 22px;">
+        <button type="button" onclick="window.print()">
+            Print / Save as PDF
+        </button>
+    </p>
+
+    <footer class="footer">
+        ECOPULSE © 2026 | Smart Building Energy Audit Assistant
+    </footer>
+
+</main>
+</body>
+</html>

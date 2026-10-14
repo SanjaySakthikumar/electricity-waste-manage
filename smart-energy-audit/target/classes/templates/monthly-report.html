@@ -1,0 +1,453 @@
+
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monthly Energy Report | ECOPULSE</title>
+
+    <style>
+        :root {
+            --bg: #f5f6f8;
+            --surface: #ffffff;
+            --text: #202b3c;
+            --muted: #687386;
+            --border: #e1e5eb;
+            --accent: #465d78;
+            --soft: #eef2f6;
+            --warning: #fff7e8;
+            --warning-border: #e7d5a8;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: Arial, Helvetica, sans-serif;
+            line-height: 1.6;
+        }
+
+        main {
+            max-width: 1180px;
+            margin: auto;
+            padding: 30px 22px 50px;
+        }
+
+        a { color: var(--accent); }
+
+        .top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .eyebrow {
+            color: var(--muted);
+            font-size: 12px;
+            letter-spacing: 1.3px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        h1 {
+            margin: 4px 0;
+            font-size: clamp(27px, 4vw, 38px);
+        }
+
+        h2 {
+            font-size: 20px;
+            margin-top: 0;
+        }
+
+        h3 { font-size: 16px; }
+
+        .muted { color: var(--muted); }
+
+        .panel, .metric {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 22px;
+            margin-bottom: 20px;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .metric { margin: 0; }
+
+        .metric-label {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .metric-value {
+            font-size: 27px;
+            font-weight: bold;
+            margin: 8px 0;
+            overflow-wrap: anywhere;
+        }
+
+        .metric-note {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .filters {
+            display: flex;
+            align-items: end;
+            flex-wrap: wrap;
+            gap: 14px;
+        }
+
+        .field {
+            flex: 1;
+            min-width: 180px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 11px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: white;
+            color: var(--text);
+            font: inherit;
+        }
+
+        button, .button {
+            border: 0;
+            border-radius: 8px;
+            background: var(--accent);
+            color: white;
+            padding: 11px 16px;
+            font: inherit;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .notice {
+            background: var(--warning);
+            border: 1px solid var(--warning-border);
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 18px;
+        }
+
+        .table-wrap { overflow-x: auto; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 680px;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+
+        th {
+            color: var(--muted);
+            font-size: 12px;
+            text-transform: uppercase;
+            background: #fafbfc;
+        }
+
+        .findings li { margin: 7px 0; }
+
+        .footer {
+            text-align: center;
+            color: var(--muted);
+            font-size: 12px;
+            margin-top: 28px;
+        }
+
+        @media (max-width: 600px) {
+            main { padding: 18px 12px 35px; }
+            .panel, .metric { padding: 16px; }
+        }
+
+        @media print {
+            body { background: white; }
+            main { max-width: none; padding: 0; }
+            .no-print, form, button { display: none !important; }
+            .panel, .metric { break-inside: avoid; }
+        }
+    </style>
+</head>
+
+<body>
+<main>
+
+    <div class="top">
+        <div>
+            <div class="eyebrow">ECOPULSE · Energy management</div>
+            <h1>Monthly Energy Report</h1>
+            <p class="muted">
+                Evidence-based summary of saved bills, appliance schedules
+                and monitoring intervals.
+            </p>
+        </div>
+
+        <div class="no-print">
+            <a href="/">← Dashboard</a>
+            &nbsp; | &nbsp;
+            <button type="button" onclick="window.print()">
+                Print / Save as PDF
+            </button>
+        </div>
+    </div>
+
+    <section class="panel no-print">
+        <h2>Report inputs</h2>
+
+        <form class="filters" method="get" th:action="@{/monthly-report}">
+            <div class="field">
+                <label for="month">Reporting month</label>
+                <input id="month" type="month" name="month"
+                       th:value="${selectedMonth}" required>
+            </div>
+
+            <div class="field">
+                <label for="room">Room filter</label>
+                <input id="room" type="text" name="room"
+                       placeholder="Leave blank for all rooms"
+                       th:value="${selectedRoom}">
+            </div>
+
+            <button type="submit">Generate report</button>
+        </form>
+    </section>
+
+    <div class="notice" th:if="${inputWarning != null}"
+         th:text="${inputWarning}">
+        Input warning
+    </div>
+
+    <section class="panel">
+        <div class="eyebrow">Report scope</div>
+        <h2 th:text="${report.month} + ' · ' + ${report.room}">
+            Report month and room
+        </h2>
+        <p class="muted">
+            Baseline month:
+            <strong th:text="${report.previousMonth}">Previous month</strong>
+        </p>
+        <p>
+            Baseline source:
+            <strong th:text="${report.baselineSource}">Source</strong>
+        </p>
+        <p class="muted">
+            Tariff used for estimates:
+            ₹<span th:text="${#numbers.formatDecimal(report.tariffPerKwh, 1, 2)}">8.00</span>/kWh
+        </p>
+    </section>
+
+    <section class="metrics">
+        <article class="metric">
+            <div class="metric-label">Baseline energy</div>
+            <div class="metric-value"
+                 th:text="${#numbers.formatDecimal(report.baselineKwh, 1, 2)} + ' kWh'">
+                0.00 kWh
+            </div>
+            <div class="metric-note"
+                 th:text="${report.baselineSource}">
+                Baseline source
+            </div>
+        </article>
+
+        <article class="metric">
+            <div class="metric-label">Current monitored energy</div>
+            <div class="metric-value"
+                 th:text="${#numbers.formatDecimal(report.currentMonitoredKwh, 1, 2)} + ' kWh'">
+                0.00 kWh
+            </div>
+            <div class="metric-note">Calculated from recorded ON intervals</div>
+        </article>
+
+        <article class="metric">
+            <div class="metric-label">Potential wasted energy</div>
+            <div class="metric-value"
+                 th:text="${#numbers.formatDecimal(report.potentialWasteKwh, 1, 2)} + ' kWh'">
+                0.00 kWh
+            </div>
+            <div class="metric-note">Estimated from overlapping empty-room intervals</div>
+        </article>
+
+        <article class="metric">
+            <div class="metric-label">Estimated cost of monitored energy</div>
+            <div class="metric-value"
+                 th:text="'₹' + ${#numbers.formatDecimal(report.currentMonitoredAmount, 1, 2)}">
+                ₹0.00
+            </div>
+            <div class="metric-note">Monitored kWh × configured tariff</div>
+        </article>
+
+        <article class="metric">
+            <div class="metric-label">Potential waste cost</div>
+            <div class="metric-value"
+                 th:text="'₹' + ${#numbers.formatDecimal(report.potentialWasteAmount, 1, 2)}">
+                ₹0.00
+            </div>
+            <div class="metric-note">Estimated avoidable energy cost</div>
+        </article>
+
+        <article class="metric">
+            <div class="metric-label">Estimated non-waste energy</div>
+            <div class="metric-value"
+                 th:text="${#numbers.formatDecimal(report.estimatedOccupiedEnergyKwh, 1, 2)} + ' kWh'">
+                0.00 kWh
+            </div>
+            <div class="metric-note">Monitored energy minus potential waste</div>
+        </article>
+    </section>
+
+    <section class="panel">
+        <div class="eyebrow">Electricity bill reconciliation</div>
+        <h2>Actual bill versus estimated usage</h2>
+
+        <div th:if="${report.currentBillAvailable}">
+            <p>
+                Current-month billed energy:
+                <strong th:text="${#numbers.formatDecimal(report.currentBillKwh, 1, 2)} + ' kWh'">
+                    0 kWh
+                </strong>
+            </p>
+            <p>
+                Current-month bill amount:
+                <strong th:text="'₹' + ${#numbers.formatDecimal(report.currentBillAmount, 1, 2)}">
+                    ₹0
+                </strong>
+            </p>
+        </div>
+
+        <p th:unless="${report.currentBillAvailable}" class="muted">
+            No saved bill ending in this reporting month was found.
+            Monitored energy is displayed separately and is not presented
+            as the actual whole-building bill.
+        </p>
+
+        <div th:if="${report.comparisonAvailable}">
+            <p th:text="${report.comparisonLabel}">Comparison type</p>
+            <p>
+                Energy difference:
+                <strong th:text="${#numbers.formatDecimal(report.comparisonKwh, 1, 2)} + ' kWh'">
+                    0 kWh
+                </strong>
+            </p>
+            <p>
+                Cost difference:
+                <strong th:text="'₹' + ${#numbers.formatDecimal(report.comparisonAmount, 1, 2)}">
+                    ₹0
+                </strong>
+            </p>
+            <p class="muted">
+                A positive difference means the baseline is higher than
+                the comparison value. A negative difference means the
+                comparison value is higher.
+            </p>
+        </div>
+
+        <p th:unless="${report.comparisonAvailable}" class="muted">
+            A comparable baseline and current-period value are not both
+            available. Enter the required bill and monitoring data to
+            enable a comparison.
+        </p>
+    </section>
+
+    <section class="panel">
+        <div class="eyebrow">Appliance-level evidence</div>
+        <h2>Monitoring breakdown</h2>
+
+        <p class="muted">
+            Inventory appliances:
+            <strong th:text="${report.applianceCount}">0</strong>
+            · Monitoring records:
+            <strong th:text="${report.monitoringRecordCount}">0</strong>
+        </p>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>Appliance</th>
+                    <th>Room</th>
+                    <th>Rated power</th>
+                    <th>Recorded ON hours</th>
+                    <th>Estimated energy</th>
+                    <th>Potential waste</th>
+                    <th>Estimated cost</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr th:each="item : ${report.applianceLines}">
+                    <td th:text="${item.applianceName}">Appliance</td>
+                    <td th:text="${item.room}">Room</td>
+                    <td th:text="${#numbers.formatDecimal(item.powerWatts, 1, 1)} + ' W'">0 W</td>
+                    <td th:text="${#numbers.formatDecimal(item.hours, 1, 2)}">0</td>
+                    <td th:text="${#numbers.formatDecimal(item.energyKwh, 1, 3)} + ' kWh'">0 kWh</td>
+                    <td th:text="${#numbers.formatDecimal(item.wasteKwh, 1, 3)} + ' kWh'">0 kWh</td>
+                    <td th:text="'₹' + ${#numbers.formatDecimal(item.estimatedCost, 1, 2)}">₹0</td>
+                </tr>
+
+                <tr th:if="${#lists.isEmpty(report.applianceLines)}">
+                    <td colspan="7">
+                        No valid monitoring intervals were found for
+                        this month and room selection.
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="eyebrow">Automated findings</div>
+        <h2>Final report findings</h2>
+
+        <ul class="findings">
+            <li th:each="finding : ${report.findings}"
+                th:text="${finding}">
+                Finding
+            </li>
+        </ul>
+
+        <div class="notice">
+            <strong>Calculation limitations:</strong>
+            Appliance energy is estimated using recorded power and
+            ON duration. Potential waste depends on the monitoring
+            model's empty-room overlap calculation. Bill amounts may
+            include fixed charges, taxes, slabs or other adjustments
+            that are not represented by a flat tariff. These figures
+            are preliminary audit estimates, not guaranteed savings.
+        </div>
+    </section>
+
+    <footer class="footer">
+        ECOPULSE © 2026 · Smart Building Energy Audit Assistant
+    </footer>
+
+</main>
+</body>
+</html>

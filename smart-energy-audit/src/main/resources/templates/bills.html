@@ -1,0 +1,583 @@
+```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ECOPULSE | Electricity Bills</title>
+
+    <style>
+        :root {
+            --background: #f5f6f8;
+            --surface: #ffffff;
+            --text: #252b35;
+            --muted: #737b88;
+            --border: #e5e8ed;
+            --accent: #526b86;
+            --accent-light: #edf2f7;
+            --success: #38775b;
+            --success-light: #edf6f0;
+            --warning: #986d2e;
+            --warning-light: #fbf4e9;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 28px 18px;
+            background: var(--background);
+            color: var(--text);
+            font-family: "Segoe UI", Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        main {
+            max-width: 1100px;
+            margin: auto;
+        }
+
+        a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        h1 {
+            margin: 12px 0 6px;
+            font-size: 29px;
+            font-weight: 650;
+        }
+
+        h2 {
+            margin-top: 0;
+            font-size: 18px;
+        }
+
+        h3 {
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+
+        .subtitle {
+            margin-top: 0;
+            color: var(--muted);
+        }
+
+        .panel {
+            margin: 20px 0;
+            padding: 24px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(30, 45, 60, 0.04);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 7px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            min-height: 42px;
+            padding: 10px;
+            background: #ffffff;
+            border: 1px solid #dce1e7;
+            border-radius: 7px;
+            font: inherit;
+        }
+
+        button,
+        .button {
+            display: inline-block;
+            margin-top: 18px;
+            padding: 11px 16px;
+            border: 1px solid var(--accent);
+            border-radius: 7px;
+            background: var(--accent);
+            color: #ffffff;
+            cursor: pointer;
+            font: inherit;
+            font-weight: 600;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        button:hover,
+        .button:hover {
+            background: #40576f;
+            color: #ffffff;
+            text-decoration: none;
+        }
+
+        .button-secondary {
+            background: #ffffff;
+            color: var(--accent);
+        }
+
+        .button-secondary:hover {
+            background: var(--accent-light);
+            color: var(--accent);
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            white-space: nowrap;
+        }
+
+        th,
+        td {
+            padding: 12px 10px;
+            border-bottom: 1px solid var(--border);
+            text-align: left;
+        }
+
+        th {
+            background: #f8f9fb;
+            color: #566171;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .error {
+            padding: 12px;
+            background: #fdf0ef;
+            border-radius: 7px;
+            color: #b42318;
+        }
+
+        .success {
+            padding: 12px;
+            background: var(--success-light);
+            border-radius: 7px;
+            color: var(--success);
+        }
+
+        .notice {
+            padding: 13px 15px;
+            background: var(--warning-light);
+            border: 1px solid #f0dfc3;
+            border-radius: 8px;
+            color: #805c27;
+            font-size: 12px;
+        }
+
+        .estimate-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .estimate-label {
+            display: inline-block;
+            padding: 5px 9px;
+            background: var(--warning-light);
+            border-radius: 5px;
+            color: var(--warning);
+            font-size: 10px;
+            font-weight: 750;
+            letter-spacing: 0.6px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 14px;
+            margin: 20px 0;
+        }
+
+        .summary-card {
+            padding: 18px;
+            background: #fafbfc;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+        }
+
+        .summary-title {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .summary-value {
+            margin-top: 5px;
+            font-size: 25px;
+            font-weight: 700;
+            overflow-wrap: anywhere;
+        }
+
+        .summary-detail {
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .empty-state {
+            padding: 20px;
+            background: #f8f9fb;
+            border-radius: 8px;
+            color: var(--muted);
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .actions .button {
+            margin-top: 0;
+        }
+
+        .footer {
+            padding: 18px 0;
+            color: #89919d;
+            font-size: 11px;
+            text-align: center;
+        }
+
+        @media print {
+            body {
+                padding: 0;
+                background: #ffffff;
+            }
+
+            .no-print,
+            .manual-form-panel,
+            .saved-bills-panel,
+            .footer,
+            .back-link {
+                display: none !important;
+            }
+
+            .panel {
+                box-shadow: none;
+                break-inside: avoid;
+            }
+
+            .estimate-panel {
+                border: none;
+            }
+
+            .table-wrap {
+                overflow: visible;
+            }
+
+            table {
+                white-space: normal;
+                font-size: 10px;
+            }
+
+            th,
+            td {
+                padding: 6px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<main>
+
+    <p class="back-link"><a th:href="@{/}">&larr; Dashboard</a></p>
+
+    <h1>Electricity Bill Management</h1>
+    <p class="subtitle">
+        Record actual electricity bills and estimate energy costs from your appliance inventory.
+    </p>
+
+    <div class="panel no-print">
+        <h2>Generate Previous-Month Estimate</h2>
+
+        <p class="subtitle">
+            Calculate the previous calendar month's estimated electricity consumption
+            using registered appliances and their working schedules.
+        </p>
+
+        <p class="notice">
+            This calculation is an estimate based on rated power and configured usage.
+            It is not an actual bill issued by your electricity provider.
+        </p>
+
+        <div class="actions" style="margin-top: 18px;">
+            <a class="button" th:href="@{/bills/estimate}">
+                Generate Previous-Month Estimate
+            </a>
+
+            <a class="button button-secondary" th:href="@{/appliances}">
+                Manage Appliances
+            </a>
+        </div>
+    </div>
+
+    <div class="panel estimate-panel"
+         th:if="${estimateGenerated}">
+
+        <div class="estimate-header">
+            <div>
+                <span class="estimate-label">
+                    ESTIMATED — NOT AN ACTUAL UTILITY BILL
+                </span>
+
+                <h2 style="margin-top: 12px;">
+                    Previous-Month Energy Estimate
+                </h2>
+
+                <p class="subtitle">
+                    Billing period:
+                    <strong th:text="${estimateStart}"></strong>
+                    to
+                    <strong th:text="${estimateEnd}"></strong>
+                </p>
+            </div>
+
+            <button type="button" class="no-print"
+                    onclick="window.print()">
+                Print / Save as PDF
+            </button>
+        </div>
+
+        <p class="notice"
+           th:if="${estimateNotice}"
+           th:text="${estimateNotice}">
+        </p>
+
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div class="summary-title">Estimated Energy</div>
+                <div class="summary-value"
+                     th:text="${#numbers.formatDecimal(estimatedTotalKwh, 1, 2)} + ' kWh'">
+                    0.00 kWh
+                </div>
+                <div class="summary-detail">
+                    Calculated from appliance schedules
+                </div>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-title">Estimated Electricity Cost</div>
+                <div class="summary-value">
+                    ₹<span th:text="${#numbers.formatDecimal(estimatedAmount, 1, 2)}">0.00</span>
+                </div>
+                <div class="summary-detail">
+                    Energy multiplied by configured tariff
+                </div>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-title">Tariff Used</div>
+                <div class="summary-value">
+                    ₹<span th:text="${#numbers.formatDecimal(tariffPerKwh, 1, 2)}">8.00</span>
+                </div>
+                <div class="summary-detail">Per kWh</div>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-title">Registered Appliances</div>
+                <div class="summary-value"
+                     th:text="${estimatedApplianceCount}">
+                    0
+                </div>
+                <div class="summary-detail">
+                    Included in this estimate
+                </div>
+            </div>
+        </div>
+
+        <h3>Appliance-wise Estimated Consumption</h3>
+
+        <div class="table-wrap"
+             th:if="${not #lists.isEmpty(applianceEstimates)}">
+
+            <table>
+                <thead>
+                <tr>
+                    <th>Appliance</th>
+                    <th>Room</th>
+                    <th>Power (W)</th>
+                    <th>Quantity</th>
+                    <th>Hours/Day</th>
+                    <th>Days/Month</th>
+                    <th>Energy (kWh)</th>
+                    <th>Estimated Cost (₹)</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr th:each="item : ${applianceEstimates}">
+                    <td th:text="${item.name}"></td>
+                    <td th:text="${item.room != null and !item.room.isBlank() ? item.room : 'Not specified'}"></td>
+
+                    <td th:text="${#numbers.formatDecimal(item.ratedPowerWatts, 1, 2)}"></td>
+                    <td th:text="${item.quantity}"></td>
+
+                    <td th:text="${#numbers.formatDecimal(item.hoursPerDay, 1, 2)}"></td>
+                    <td th:text="${item.daysPerMonth}"></td>
+
+                    <td th:text="${#numbers.formatDecimal(item.energyKwh, 1, 2)}"></td>
+
+                    <td th:text="${#numbers.formatDecimal(item.estimatedCost, 1, 2)}"></td>
+                </tr>
+                </tbody>
+
+                <tfoot>
+                <tr>
+                    <th colspan="6">TOTAL ESTIMATE</th>
+                    <th th:text="${#numbers.formatDecimal(estimatedTotalKwh, 1, 2)}"></th>
+                    <th th:text="${#numbers.formatDecimal(estimatedAmount, 1, 2)}"></th>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <div class="empty-state"
+             th:if="${#lists.isEmpty(applianceEstimates)}">
+            No appliances are available for calculation.
+            Add appliances first, then generate the estimate again.
+        </div>
+
+        <h3 style="margin-top: 24px;">Calculation Method</h3>
+
+        <p>
+            Estimated monthly energy =
+            rated power × quantity × daily working hours × working days ÷ 1000.
+        </p>
+
+        <p>
+            Estimated electricity cost = estimated monthly energy × tariff per kWh.
+        </p>
+
+        <p class="subtitle">
+            The calculation uses each appliance's configured days per month.
+            Actual usage, appliance load variation, fixed charges, taxes, subsidies,
+            and other tariff components may change the final utility bill.
+        </p>
+
+    </div>
+
+    <div class="panel manual-form-panel">
+        <h2>Enter Actual Electricity Bill</h2>
+
+        <p class="subtitle">
+            Use this form only for values taken from an actual electricity bill.
+        </p>
+
+        <p class="success"
+           th:if="${message}"
+           th:text="${message}">
+        </p>
+
+        <p class="error"
+           th:if="${error}"
+           th:text="${error}">
+        </p>
+
+        <form th:action="@{/bills}"
+              th:object="${bill}"
+              method="post">
+
+            <div class="grid">
+                <div>
+                    <label for="periodStart">Billing period start</label>
+                    <input id="periodStart"
+                           type="date"
+                           th:field="*{periodStart}"
+                           required>
+                </div>
+
+                <div>
+                    <label for="periodEnd">Billing period end</label>
+                    <input id="periodEnd"
+                           type="date"
+                           th:field="*{periodEnd}"
+                           required>
+                </div>
+
+                <div>
+                    <label for="billedKwh">Billed energy (kWh)</label>
+                    <input id="billedKwh"
+                           type="number"
+                           th:field="*{billedKwh}"
+                           min="0.01"
+                           step="any"
+                           required>
+                </div>
+
+                <div>
+                    <label for="billAmount">Actual bill amount (₹)</label>
+                    <input id="billAmount"
+                           type="number"
+                           th:field="*{billAmount}"
+                           min="0"
+                           step="any"
+                           required>
+                </div>
+            </div>
+
+            <button type="submit">Save Actual Electricity Bill</button>
+        </form>
+    </div>
+
+    <div class="panel saved-bills-panel">
+        <h2>Saved Actual Bills</h2>
+
+        <p class="subtitle">
+            This table contains saved bill records, not the generated estimate above.
+        </p>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>From</th>
+                    <th>To</th>
+                    <th>Energy (kWh)</th>
+                    <th>Amount (₹)</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr th:each="b : ${bills}">
+                    <td th:text="${b.periodStart}"></td>
+                    <td th:text="${b.periodEnd}"></td>
+                    <td th:text="${#numbers.formatDecimal(b.billedKwh, 1, 2)}"></td>
+                    <td th:text="${#numbers.formatDecimal(b.billAmount, 1, 2)}"></td>
+                </tr>
+
+                <tr th:if="${#lists.isEmpty(bills)}">
+                    <td colspan="4">No actual electricity bills saved yet.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <footer class="footer">
+        ECOPULSE | Smart Building Energy Audit Assistant
+    </footer>
+
+</main>
+</body>
+</html>
+```
