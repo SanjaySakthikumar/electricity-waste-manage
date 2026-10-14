@@ -1,0 +1,275 @@
+
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ECOPULSE Energy Report</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 24px;
+            font-family: Arial, sans-serif;
+            background: #f6f7f9;
+            color: #253342;
+        }
+        main { max-width: 1150px; margin: auto; }
+        .card {
+            background: white;
+            border: 1px solid #e0e6ed;
+            border-radius: 12px;
+            padding: 18px;
+            margin: 14px 0;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+            gap: 12px;
+        }
+        .metric { font-size: 24px; font-weight: bold; margin: 8px 0; }
+        .muted { color: #657486; font-size: 14px; }
+        .tag {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 5px;
+            background: #edf1f5;
+            font-size: 12px;
+        }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #e0e6ed;
+            text-align: left;
+        }
+        th { background: #f0f3f7; }
+        input, select { padding: 9px; }
+        button {
+            padding: 10px 14px;
+            background: #263d52;
+            color: white;
+            border: 0;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        @media print {
+            body { padding: 0; background: white; }
+            .no-print { display: none; }
+            .card { break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+<main>
+    <h1>ECOPULSE</h1>
+    <h2>Room Energy Audit Report</h2>
+
+    <form th:action="@{/report}" method="get" class="no-print">
+        <label for="room">Room:</label>
+        <select id="room" name="room" required>
+            <option th:each="r : ${rooms}"
+                    th:value="${r}"
+                    th:text="${r}"
+                    th:selected="${r == selectedRoom}">
+            </option>
+        </select>
+
+        <label for="month">Month:</label>
+        <input type="month" id="month" name="month"
+               th:value="${selectedMonth}" required>
+
+        <button type="submit">Analyze</button>
+        <button type="button" onclick="window.print()">Print / Save PDF</button>
+    </form>
+
+    <p th:if="${monthError != null}" th:text="${monthError}"></p>
+    <p th:if="${reportError != null}" th:text="${reportError}"></p>
+
+    <section class="card" th:if="${selectedRoom != null and month != null}">
+        <h2>Room: <span th:text="${selectedRoom}"></span></h2>
+        <p>Report month: <strong th:text="${month}"></strong></p>
+    </section>
+
+    <section class="card" th:if="${previousMonthKwh != null}">
+        <h2>1. Previous-Month Bill / Baseline</h2>
+        <p>Reference month: <strong th:text="${previousMonth}"></strong></p>
+
+        <p>
+            Data source:
+            <span class="tag" th:if="${actualPreviousBillAvailable}">
+                Actual saved bill
+            </span>
+            <span class="tag" th:unless="${actualPreviousBillAvailable}">
+                Estimated baseline — not an actual bill
+            </span>
+        </p>
+
+        <div class="grid">
+            <div class="card">
+                <div class="muted">Historical energy</div>
+                <div class="metric"
+                     th:text="${#numbers.formatDecimal(previousMonthKwh, 1, 3)}">0</div>
+                <span>kWh</span>
+            </div>
+            <div class="card">
+                <div class="muted">Historical bill / estimated cost</div>
+                <div class="metric">
+                    ₹<span th:text="${#numbers.formatDecimal(previousMonthAmount, 1, 2)}">0</span>
+                </div>
+            </div>
+            <div class="card">
+                <div class="muted">Schedule baseline</div>
+                <div class="metric"
+                     th:text="${#numbers.formatDecimal(estimatedBaselineKwh, 1, 3)}">0</div>
+                <span>kWh</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="card" th:if="${currentMonthKwh != null}">
+        <h2>2. Current-Month Energy Analysis</h2>
+        <p>
+            Data source:
+            <span class="tag"
+                  th:if="${currentMonthSource == 'MONITORED_INTERVAL_ESTIMATE'}">
+                Monitoring interval estimate
+            </span>
+            <span class="tag"
+                  th:if="${currentMonthSource == 'SCHEDULE_ESTIMATE'}">
+                Appliance schedule estimate
+            </span>
+        </p>
+
+        <div class="grid">
+            <div class="card">
+                <div class="muted">Total energy</div>
+                <div class="metric"
+                     th:text="${#numbers.formatDecimal(currentMonthKwh, 1, 3)}">0</div>
+                <span>kWh</span>
+            </div>
+            <div class="card">
+                <div class="muted">Estimated current cost</div>
+                <div class="metric">
+                    ₹<span th:text="${#numbers.formatDecimal(currentMonthAmount, 1, 2)}">0</span>
+                </div>
+            </div>
+            <div class="card">
+                <div class="muted">Occupied energy</div>
+                <div class="metric"
+                     th:text="${#numbers.formatDecimal(occupiedKwh, 1, 3)}">0</div>
+                <span>kWh</span>
+            </div>
+            <div class="card">
+                <div class="muted">Unoccupied energy</div>
+                <div class="metric"
+                     th:text="${#numbers.formatDecimal(unoccupiedKwh, 1, 3)}">0</div>
+                <span>kWh</span>
+            </div>
+            <div class="card">
+                <div class="muted">Potential wastage cost</div>
+                <div class="metric">
+                    ₹<span th:text="${#numbers.formatDecimal(potentialWasteCost, 1, 2)}">0</span>
+                </div>
+            </div>
+        </div>
+
+        <p class="muted">
+            Tariff used: ₹<span th:text="${#numbers.formatDecimal(tariffPerKwh, 1, 2)}">8</span>
+            per kWh. Actual utility charges may differ.
+        </p>
+
+        <p th:if="${!monitoringAvailable}">
+            No valid monitoring intervals exist for the selected month.
+            Occupied and unoccupied consumption cannot be calculated from
+            the current data; the total shown is a schedule estimate.
+        </p>
+    </section>
+
+    <section class="card" th:if="${energyDifferenceKwh != null}">
+        <h2>3. Historical vs Current Energy</h2>
+        <div class="grid">
+            <div class="card">
+                <div class="muted">Energy difference</div>
+                <div class="metric"
+                     th:text="${#numbers.formatDecimal(energyDifferenceKwh, 1, 3)}">0</div>
+                <span>kWh (current minus historical)</span>
+            </div>
+            <div class="card">
+                <div class="muted">Percentage change</div>
+                <div class="metric" th:if="${percentageChange != null}">
+                    <span th:text="${#numbers.formatDecimal(percentageChange, 1, 2)}">0</span>%
+                </div>
+                <p th:if="${percentageChange == null}">
+                    Not available because historical energy is zero.
+                </p>
+            </div>
+        </div>
+        <p class="muted">
+            Positive difference means current energy is higher than the
+            historical reference. Interpret carefully when periods or
+            data sources differ.
+        </p>
+    </section>
+
+    <section class="card" th:if="${applianceWaste != null}">
+        <h2>4. Appliance-Wise Energy Wastage</h2>
+        <p class="muted">
+            Ranked by unoccupied energy. Only appliances with valid
+            monitoring intervals appear here.
+        </p>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>Appliance</th>
+                    <th>Room</th>
+                    <th>Power (W)</th>
+                    <th>ON hours</th>
+                    <th>Total (kWh)</th>
+                    <th>Occupied (kWh)</th>
+                    <th>Potential wastage (kWh)</th>
+                    <th>Empty-room ON hours</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="item : ${applianceWaste}">
+                    <td th:text="${item.applianceName}"></td>
+                    <td th:text="${item.room}"></td>
+                    <td th:text="${#numbers.formatDecimal(item.powerWatts, 1, 1)}"></td>
+                    <td th:text="${#numbers.formatDecimal(item.totalOnHours, 1, 2)}"></td>
+                    <td th:text="${#numbers.formatDecimal(item.totalKwh, 1, 3)}"></td>
+                    <td th:text="${#numbers.formatDecimal(item.occupiedKwh, 1, 3)}"></td>
+                    <td th:text="${#numbers.formatDecimal(item.wastedKwh, 1, 3)}"></td>
+                    <td th:text="${#numbers.formatDecimal(item.wastedHours, 1, 2)}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p th:if="${#lists.isEmpty(applianceWaste)}">
+            No valid appliance monitoring results are available.
+        </p>
+    </section>
+
+    <section class="card" th:if="${recommendations != null}">
+        <h2>5. Recommendations</h2>
+        <ul>
+            <li th:each="recommendation : ${recommendations}"
+                th:text="${recommendation}"></li>
+        </ul>
+    </section>
+
+    <section class="card">
+        <h2>Calculation method</h2>
+        <p>Energy (kWh) = Power (W) × ON duration (hours) ÷ 1000.</p>
+        <p>
+            Unoccupied energy is the overlap between an appliance ON
+            interval and a recorded room-empty interval. This is
+            potential wastage, not necessarily avoidable wastage.
+        </p>
+        <p>Estimated cost = energy (kWh) × configured tariff.</p>
+    </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,354 @@
+
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ECOPULSE | Energy Analysis</title>
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 24px;
+            font-family: Arial, sans-serif;
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+
+        main {
+            max-width: 1100px;
+            margin: auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        h1 { margin-bottom: 8px; }
+        h2 { margin-top: 0; }
+
+        .muted { color: #64748b; }
+
+        .navigation {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+
+        a {
+            color: #166534;
+            text-decoration: none;
+        }
+
+        .navigation a {
+            background: white;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 16px;
+        }
+
+        .card {
+            background: white;
+            padding: 22px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+            min-width: 0;
+        }
+
+        .value {
+            font-size: 27px;
+            font-weight: bold;
+            margin: 12px 0;
+            overflow-wrap: anywhere;
+        }
+
+        .unit {
+            font-size: 14px;
+            font-weight: normal;
+            color: #64748b;
+        }
+
+        .section { margin-top: 24px; }
+
+        .notice {
+            margin-top: 20px;
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            padding: 16px;
+            border-radius: 8px;
+            line-height: 1.6;
+        }
+
+        .success-note {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            padding: 14px;
+            border-radius: 8px;
+            margin-top: 16px;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 520px;
+        }
+
+        th, td {
+            padding: 13px 10px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th { background: #f8fafc; }
+
+        .right { text-align: right; }
+
+        .empty {
+            text-align: center;
+            padding: 24px;
+            color: #64748b;
+        }
+
+        button {
+            background: #166534;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 11px 16px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        @media print {
+            body { background: white; padding: 0; }
+            .navigation, .print-button { display: none; }
+            .card { box-shadow: none; border: 1px solid #ddd; }
+            main { max-width: none; }
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 14px; }
+            .card { padding: 16px; }
+            .value { font-size: 23px; }
+        }
+    </style>
+</head>
+
+<body>
+<main>
+    <header>
+        <div>
+            <h1>ECOPULSE Energy Audit</h1>
+            <p class="muted">
+                Building consumption analysis and electricity bill comparison
+            </p>
+        </div>
+
+        <button class="print-button"
+                type="button"
+                onclick="window.print()">
+            Print / Save PDF
+        </button>
+    </header>
+
+    <nav class="navigation">
+        <a href="/">Dashboard</a>
+        <a href="/building">Building Profile</a>
+        <a href="/bills">Electricity Bills</a>
+        <a href="/appliances">Appliances</a>
+        <a href="/monitoring">Occupancy Monitoring</a>
+        <a href="/recommendations">Recommendations</a>
+    </nav>
+
+    <section class="cards">
+        <article class="card">
+            <p class="muted">Estimated monthly consumption</p>
+            <div class="value"
+                 th:text="${#numbers.formatDecimal(estimatedMonthlyKwh, 1, 2)}">
+                0.00
+            </div>
+            <span class="unit">kWh/month</span>
+        </article>
+
+        <article class="card" th:if="${bill != null}">
+            <p class="muted">Actual billed consumption</p>
+            <div class="value"
+                 th:text="${#numbers.formatDecimal(bill.billedKwh, 1, 2)}">
+                0.00
+            </div>
+            <span class="unit">kWh for the billing period</span>
+        </article>
+
+        <article class="card" th:if="${bill != null}">
+            <p class="muted">Estimated period consumption</p>
+            <div class="value"
+                 th:text="${#numbers.formatDecimal(estimatedPeriodKwh, 1, 2)}">
+                0.00
+            </div>
+            <span class="unit">kWh</span>
+        </article>
+
+        <article class="card" th:if="${buildingProfile != null}">
+            <p class="muted">Energy intensity</p>
+            <div class="value"
+                 th:text="${#numbers.formatDecimal(energyIntensity, 1, 2)}">
+                0.00
+            </div>
+            <span class="unit">kWh/m²/month</span>
+        </article>
+    </section>
+
+    <section class="section card" th:if="${bill != null}">
+        <h2>Electricity Bill Comparison</h2>
+
+        <div class="table-wrap">
+            <table>
+                <tbody>
+                <tr>
+                    <th>Billing period</th>
+                    <td>
+                        <span th:text="${bill.periodStart}"></span>
+                        to
+                        <span th:text="${bill.periodEnd}"></span>
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Actual bill amount</th>
+                    <td>
+                        ₹<span th:text="${#numbers.formatDecimal(bill.billAmount, 1, 2)}"></span>
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Average bill cost per kWh</th>
+                    <td>
+                        ₹<span th:text="${#numbers.formatDecimal(averageRatePerKwh, 1, 2)}"></span>
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Estimated appliance energy cost</th>
+                    <td>
+                        ₹<span th:text="${#numbers.formatDecimal(estimatedCost, 1, 2)}"></span>
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Billed minus estimated consumption</th>
+                    <td>
+                        <strong th:text="${#numbers.formatDecimal(differenceKwh, 1, 2)}"></strong>
+                        kWh
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Difference as a percentage of billed units</th>
+                    <td>
+                        <strong th:text="${#numbers.formatDecimal(differencePercent, 1, 2)}"></strong>%
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p class="muted">
+            A positive difference means billed consumption exceeds the
+            appliance estimate. A negative difference means the appliance
+            estimate exceeds billed consumption.
+        </p>
+    </section>
+
+    <section class="section card" th:if="${bill == null}">
+        <h2>No electricity bill saved</h2>
+        <p>
+            Add your latest bill to compare billed consumption with the
+            appliance-based estimate.
+        </p>
+        <a href="/bills">Enter electricity bill →</a>
+    </section>
+
+    <section class="section card">
+        <h2>Appliance Consumption Breakdown</h2>
+        <p class="muted">
+            Estimated monthly consumption calculated from appliance power,
+            quantity and daily usage.
+        </p>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>Appliance</th>
+                    <th>Room</th>
+                    <th>Quantity</th>
+                    <th>Power per unit</th>
+                    <th>Monthly consumption</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr th:each="item : ${appliances}">
+                    <td th:text="${item.name}">Fan</td>
+                    <td th:text="${item.room}">Bedroom</td>
+                    <td th:text="${item.quantity}">2</td>
+                    <td>
+                        <span th:text="${item.ratedPowerWatts}"></span> W
+                    </td>
+                    <td>
+                        <strong th:text="${#numbers.formatDecimal(item.monthlyKwh, 1, 2)}"></strong>
+                        kWh
+                    </td>
+                </tr>
+
+                <tr th:if="${#lists.isEmpty(appliances)}">
+                    <td colspan="5" class="empty">
+                        No appliances registered yet.
+                        <a href="/appliances">Add appliances</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="success-note">
+            <strong>Total estimated monthly consumption:</strong>
+            <span th:text="${#numbers.formatDecimal(estimatedMonthlyKwh, 1, 2)}"></span>
+            kWh
+        </div>
+    </section>
+
+    <section class="notice">
+        <strong>Interpretation note:</strong>
+        The appliance figures are estimates based on entered usage.
+        The difference from the electricity bill is an investigation indicator,
+        not proof of wasted energy or faulty equipment. Other loads, actual
+        runtime, billing dates and meter readings can affect the comparison.
+        Energy intensity is a comparison metric, not a standalone efficiency
+        verdict.
+    </section>
+
+    <p class="muted">
+        ECOPULSE | Smart Building Energy Audit Assistant
+    </p>
+</main>
+</body>
+</html>

@@ -1,0 +1,345 @@
+
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Occupancy Energy Monitoring | ECOPULSE</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 28px;
+            background: #f1f5f9;
+            color: #172033;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        a {
+            color: #087f5b;
+        }
+
+        h1 {
+            margin-bottom: 8px;
+        }
+
+        .muted {
+            color: #64748b;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .card, .panel {
+            background: white;
+            border-radius: 12px;
+            padding: 22px;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+        }
+
+        .metric {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 12px 0;
+        }
+
+        .warning {
+            background: #fff7ed;
+            border-left: 5px solid #ea580c;
+            padding: 15px;
+            margin: 12px 0;
+            border-radius: 6px;
+        }
+
+        .success {
+            background: #ecfdf5;
+            border-left: 5px solid #059669;
+            padding: 15px;
+            margin: 12px 0;
+            border-radius: 6px;
+        }
+
+        .error {
+            background: #fef2f2;
+            color: #b91c1c;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 12px 0;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+        }
+
+        button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            background: #087f5b;
+            color: white;
+        }
+
+        .delete {
+            background: #dc2626;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            background: white;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 13px;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+
+        th {
+            background: #f8fafc;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 14px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <a th:href="@{/}">← Dashboard</a>
+
+    <h1>Occupancy-Based Energy Monitoring</h1>
+    <p class="muted">
+        Simulate appliance operation during empty-room periods and identify
+        potential electricity wastage.
+    </p>
+
+    <div class="cards">
+        <div class="card">
+            <div class="muted">Potential wasted energy</div>
+            <div class="metric"
+                 th:text="${#numbers.formatDecimal(totalPotentialWasteKwh, 1, 4)}">
+                0.0000
+            </div>
+            <div>kWh</div>
+        </div>
+
+        <div class="card">
+            <div class="muted">Appliance ON in empty room</div>
+            <div class="metric"
+                 th:text="${#numbers.formatDecimal(totalEmptyRoomOnHours, 1, 2)}">
+                0.00
+            </div>
+            <div>hours</div>
+        </div>
+
+        <div class="card">
+            <div class="muted">Potential waste alerts</div>
+            <div class="metric" th:text="${alertCount}">0</div>
+            <div>records with potential waste</div>
+        </div>
+    </div>
+
+    <section class="panel">
+        <h2>Simulation Input</h2>
+        <p class="muted">
+            Enter the appliance ON period and the room-empty period.
+            The application calculates their overlapping time.
+        </p>
+
+        <div class="error" th:if="${errorMessage}"
+             th:text="${errorMessage}"></div>
+
+        <form th:action="@{/monitoring}"
+              th:object="${monitoringRecord}"
+              method="post">
+
+            <div class="form-grid">
+                <div>
+                    <label for="applianceName">Appliance name</label>
+                    <input id="applianceName" type="text"
+                           th:field="*{applianceName}" required>
+                </div>
+
+                <div>
+                    <label for="room">Room</label>
+                    <input id="room" type="text"
+                           th:field="*{room}" required>
+                </div>
+
+                <div>
+                    <label for="powerWatts">Power (watts)</label>
+                    <input id="powerWatts" type="number"
+                           th:field="*{powerWatts}"
+                           min="0.1" step="0.1" required>
+                </div>
+
+                <div>
+                    <label for="deviceOnStart">Appliance ON — start</label>
+                    <input id="deviceOnStart" type="datetime-local"
+                           th:field="*{deviceOnStart}" required>
+                </div>
+
+                <div>
+                    <label for="deviceOnEnd">Appliance ON — end</label>
+                    <input id="deviceOnEnd" type="datetime-local"
+                           th:field="*{deviceOnEnd}" required>
+                </div>
+
+                <div>
+                    <label for="roomEmptyStart">Room empty — start</label>
+                    <input id="roomEmptyStart" type="datetime-local"
+                           th:field="*{roomEmptyStart}" required>
+                </div>
+
+                <div>
+                    <label for="roomEmptyEnd">Room empty — end</label>
+                    <input id="roomEmptyEnd" type="datetime-local"
+                           th:field="*{roomEmptyEnd}" required>
+                </div>
+            </div>
+
+            <p style="margin-top: 20px;">
+                <button type="submit">Save Simulation and Calculate</button>
+            </p>
+        </form>
+    </section>
+
+    <section class="panel" style="margin-top: 24px;">
+        <h2>Occupancy Alerts</h2>
+
+        <div th:if="${alertCount == 0}" class="success">
+            No potential energy-waste alerts have been identified
+            in the saved records.
+        </div>
+
+        <div th:each="record : ${monitoringRecords}"
+             th:if="${record.potentialWasteKwh > 0}"
+             class="warning">
+
+            <strong>Potential energy wastage detected</strong>
+            <p>
+                <span th:text="${record.applianceName}">Fan</span>
+                in
+                <span th:text="${record.room}">Room 101</span>
+                may have consumed
+                <strong
+                    th:text="${#numbers.formatDecimal(record.potentialWasteKwh, 1, 4)}">
+                    0.0000
+                </strong>
+                kWh while the room was empty.
+            </p>
+            <p class="muted">
+                This is an estimate based on the entered power and timestamps.
+                Verify whether the appliance needed to remain on.
+            </p>
+        </div>
+    </section>
+
+    <section class="panel" style="margin-top: 24px;">
+        <h2>Monitoring Records</h2>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>Appliance</th>
+                    <th>Room</th>
+                    <th>Power (W)</th>
+                    <th>Empty-room ON (hours)</th>
+                    <th>Potential waste (kWh)</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr th:each="record : ${monitoringRecords}">
+                    <td th:text="${record.applianceName}">Fan</td>
+                    <td th:text="${record.room}">Room 101</td>
+                    <td th:text="${record.powerWatts}">60</td>
+
+                    <td th:text="${#numbers.formatDecimal(record.overlapHours, 1, 2)}">
+                        2.50
+                    </td>
+
+                    <td th:text="${#numbers.formatDecimal(record.potentialWasteKwh, 1, 4)}">
+                        0.1500
+                    </td>
+
+                    <td>
+                        <span th:if="${record.potentialWasteKwh > 0}"
+                              style="color:#c2410c;font-weight:bold;">
+                            Potential waste
+                        </span>
+                        <span th:unless="${record.potentialWasteKwh > 0}"
+                              style="color:#047857;font-weight:bold;">
+                            No overlap
+                        </span>
+                    </td>
+
+                    <td>
+                        <form th:action="@{/monitoring/delete/{id}(id=${record.id})}"
+                              method="post"
+                              onsubmit="return confirm('Delete this monitoring record?');">
+                            <button type="submit" class="delete">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+
+                <tr th:if="${#lists.isEmpty(monitoringRecords)}">
+                    <td colspan="7">
+                        No monitoring records yet. Add a simulation above.
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <p class="muted" style="margin-top: 24px;">
+        ECOPULSE software simulation — alerts only; no appliances are
+        switched off automatically.
+    </p>
+
+</div>
+</body>
+</html>

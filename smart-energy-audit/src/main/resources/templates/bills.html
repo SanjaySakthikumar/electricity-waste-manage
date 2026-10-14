@@ -1,0 +1,120 @@
+
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Electricity Bills</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f1f5f9;
+            color: #1e293b;
+            padding: 25px;
+        }
+        main { max-width: 900px; margin: auto; }
+        .panel {
+            background: white;
+            padding: 24px;
+            margin: 20px 0;
+            border-radius: 12px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+        label { display: block; margin-bottom: 6px; }
+        input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+        }
+        button {
+            margin-top: 18px;
+            padding: 12px 20px;
+            background: #166534;
+            color: white;
+            border: 0;
+            cursor: pointer;
+        }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+        .error { color: #b91c1c; }
+        .success { color: #166534; }
+    </style>
+</head>
+<body>
+<main>
+    <p><a href="/">← Dashboard</a></p>
+    <h1>Electricity Bill Management</h1>
+
+    <div class="panel">
+        <h2>Enter bill details</h2>
+
+        <p class="success" th:if="${message}" th:text="${message}"></p>
+        <p class="error" th:if="${error}" th:text="${error}"></p>
+
+        <form th:action="@{/bills}" th:object="${bill}" method="post">
+            <div class="grid">
+                <div>
+                    <label for="periodStart">Billing period start</label>
+                    <input id="periodStart" type="date"
+                           th:field="*{periodStart}" required>
+                </div>
+                <div>
+                    <label for="periodEnd">Billing period end</label>
+                    <input id="periodEnd" type="date"
+                           th:field="*{periodEnd}" required>
+                </div>
+                <div>
+                    <label for="billedKwh">Billed energy (kWh)</label>
+                    <input id="billedKwh" type="number"
+                           th:field="*{billedKwh}"
+                           min="0.01" step="any" required>
+                </div>
+                <div>
+                    <label for="billAmount">Bill amount (₹)</label>
+                    <input id="billAmount" type="number"
+                           th:field="*{billAmount}"
+                           min="0" step="any" required>
+                </div>
+            </div>
+            <button type="submit">Save Electricity Bill</button>
+        </form>
+    </div>
+
+    <div class="panel">
+        <h2>Saved bills</h2>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>From</th>
+                        <th>To</th>
+                        <th>Energy (kWh)</th>
+                        <th>Amount (₹)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="b : ${bills}">
+                        <td th:text="${b.periodStart}"></td>
+                        <td th:text="${b.periodEnd}"></td>
+                        <td th:text="${#numbers.formatDecimal(b.billedKwh, 1, 2)}"></td>
+                        <td th:text="${#numbers.formatDecimal(b.billAmount, 1, 2)}"></td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(bills)}">
+                        <td colspan="4">No electricity bills saved yet.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+</body>
+</html>

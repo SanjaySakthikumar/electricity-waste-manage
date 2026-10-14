@@ -1,0 +1,145 @@
+
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ECOPULSE Dashboard</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 28px;
+            background: #f6f7f9;
+            color: #253342;
+            font-family: Arial, sans-serif;
+        }
+        main { max-width: 1050px; margin: auto; }
+        .intro { color: #687788; line-height: 1.6; }
+        .room-picker {
+            background: white;
+            padding: 16px;
+            border: 1px solid #dfe5eb;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+        }
+        .stage {
+            display: block;
+            min-height: 145px;
+            padding: 22px;
+            border: 1px solid #dce3e9;
+            border-radius: 14px;
+            background: white;
+            color: inherit;
+            text-decoration: none;
+        }
+        .stage h3 { margin-top: 15px; }
+        .stage p { color: #657486; line-height: 1.5; }
+        .ready { border-left: 4px solid #3d8060; }
+        .locked {
+            opacity: 0.40;
+            filter: grayscale(1);
+            pointer-events: none;
+            background: #eceff2;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 5px;
+            background: #edf1f5;
+            font-size: 12px;
+        }
+        button {
+            padding: 9px 14px;
+            background: #263d52;
+            color: white;
+            border: 0;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        select { padding: 9px; max-width: 100%; }
+    </style>
+</head>
+<body>
+<main>
+    <h1>ECOPULSE</h1>
+    <h2>Smart Building Energy Audit</h2>
+    <p class="intro">
+        Complete the workflow in order. Start by saving room details.
+        The next steps become available when their prerequisites are met.
+    </p>
+
+    <section class="room-picker">
+        <form th:action="@{/}" method="get">
+            <label for="room"><strong>Selected room:</strong></label>
+            <select id="room" name="room">
+                <option th:each="r : ${rooms}"
+                        th:value="${r}"
+                        th:text="${r}"
+                        th:selected="${r == selectedRoom}">
+                </option>
+            </select>
+            <button type="submit">Load Room</button>
+        </form>
+        <p th:if="${#lists.isEmpty(rooms)}">
+            Save room details and register its appliances to begin.
+        </p>
+    </section>
+
+    <section class="grid">
+        <a class="stage ready" th:href="@{/building}">
+            <span class="status">START HERE</span>
+            <h3>01 · Room Details</h3>
+            <p>Enter and save the room profile before continuing.</p>
+        </a>
+
+        <a class="stage"
+           th:classappend="${!roomReady} ? ' locked' : ' ready'"
+           th:href="${roomReady} ? @{/appliances} : @{/}">
+            <span class="status"
+                  th:text="${roomReady} ? 'UNLOCKED' : 'LOCKED'">LOCKED</span>
+            <h3>02 · Room Appliances</h3>
+            <p>Register appliances, power, quantity and working schedules.</p>
+        </a>
+
+        <a class="stage"
+           th:classappend="${!baselineReady} ? ' locked' : ' ready'"
+           th:href="${baselineReady} ? @{/report(room=${selectedRoom})} : @{/}">
+            <span class="status"
+                  th:text="${baselineReady} ? 'UNLOCKED' : 'LOCKED'">LOCKED</span>
+            <h3>03 · Previous-Month Baseline</h3>
+            <p>Calculate estimated historical energy from the room's schedules.</p>
+        </a>
+
+        <a class="stage"
+           th:classappend="${!appliancesReady} ? ' locked' : ' ready'"
+           th:href="${appliancesReady} ? @{/monitoring(room=${selectedRoom})} : @{/}">
+            <span class="status"
+                  th:text="${appliancesReady} ? 'UNLOCKED' : 'LOCKED'">LOCKED</span>
+            <h3>04 · Current-Month Monitoring</h3>
+            <p>Record appliance ON times and room-empty periods.</p>
+        </a>
+
+        <a class="stage"
+           th:classappend="${!reportReady} ? ' locked' : ' ready'"
+           th:href="${reportReady} ? @{/report(room=${selectedRoom})} : @{/}">
+            <span class="status"
+                  th:text="${reportReady} ? 'UNLOCKED' : 'LOCKED'">LOCKED</span>
+            <h3>05 · Energy Audit Report</h3>
+            <p>Analyze bills, energy consumption, and appliance-wise wastage.</p>
+        </a>
+    </section>
+
+    <p class="intro">
+        Registered appliances in selected room:
+        <strong th:text="${applianceCount}">0</strong>.
+        Valid current-month monitoring intervals:
+        <strong th:text="${monitoringRecordCount}">0</strong>.
+    </p>
+</main>
+</body>
+</html>

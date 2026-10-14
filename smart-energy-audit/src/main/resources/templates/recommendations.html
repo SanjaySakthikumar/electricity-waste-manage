@@ -1,0 +1,156 @@
+
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Energy Recommendations</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f1f5f9;
+            color: #1e293b;
+            padding: 24px;
+        }
+        main { max-width: 1100px; margin: auto; }
+        .panel, .card {
+            background: white;
+            padding: 22px;
+            border-radius: 12px;
+            margin: 18px 0;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+        }
+        label { display: block; margin: 12px 0 6px; }
+        input, textarea {
+            box-sizing: border-box;
+            width: 100%;
+            padding: 10px;
+        }
+        button {
+            margin-top: 18px;
+            padding: 12px 20px;
+            color: white;
+            background: #166534;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .value { font-size: 25px; font-weight: bold; }
+        .error { color: #b91c1c; }
+        .muted { color: #64748b; }
+    </style>
+</head>
+<body>
+<main>
+    <p><a href="/">← Dashboard</a></p>
+    <h1>Recommendations &amp; Savings</h1>
+
+    <div class="grid">
+        <section class="card">
+            <p>Expected monthly savings</p>
+            <div class="value"
+                 th:text="${#numbers.formatDecimal(totalSavingsKwh, 1, 2)} + ' kWh'">
+                0 kWh
+            </div>
+        </section>
+        <section class="card">
+            <p>Estimated monthly bill savings</p>
+            <div class="value">
+                ₹<span th:text="${#numbers.formatDecimal(totalSavingsRupees, 1, 2)}">0.00</span>
+            </div>
+        </section>
+        <section class="card">
+            <p>Total implementation cost</p>
+            <div class="value">
+                ₹<span th:text="${#numbers.formatDecimal(totalCost, 1, 2)}">0.00</span>
+            </div>
+        </section>
+        <section class="card">
+            <p>Estimated simple payback</p>
+            <div class="value"
+                 th:text="${paybackMonths > 0 ? #numbers.formatDecimal(paybackMonths, 1, 1) + ' months' : 'N/A'}">
+                N/A
+            </div>
+        </section>
+    </div>
+
+    <section class="panel">
+        <h2>Add a recommendation</h2>
+        <p class="muted">
+            Enter a realistic, evidence-based savings estimate and the
+            implementation cost.
+        </p>
+
+        <p th:if="${message}" th:text="${message}"></p>
+        <p class="error" th:if="${error}" th:text="${error}"></p>
+
+        <form th:action="@{/recommendations}"
+              th:object="${recommendation}" method="post">
+
+            <label for="title">Recommendation title</label>
+            <input id="title" type="text" th:field="*{title}" required>
+
+            <label for="description">Description and evidence</label>
+            <textarea id="description" th:field="*{description}"
+                      rows="3"></textarea>
+
+            <div class="grid">
+                <div>
+                    <label for="expectedMonthlySavingsKwh">
+                        Expected savings (kWh/month)
+                    </label>
+                    <input id="expectedMonthlySavingsKwh"
+                           type="number"
+                           th:field="*{expectedMonthlySavingsKwh}"
+                           min="0" step="any" required>
+                </div>
+
+                <div>
+                    <label for="implementationCost">
+                        Implementation cost (₹)
+                    </label>
+                    <input id="implementationCost"
+                           type="number"
+                           th:field="*{implementationCost}"
+                           min="0" step="any" required>
+                </div>
+            </div>
+
+            <button type="submit">Save Recommendation</button>
+        </form>
+    </section>
+
+    <section class="panel">
+        <h2>Saved recommendations</h2>
+
+        <article th:each="r : ${recommendations}" class="card">
+            <h3 th:text="${r.title}"></h3>
+            <p th:text="${r.description}"></p>
+            <p>
+                Expected savings:
+                <strong th:text="${#numbers.formatDecimal(r.expectedMonthlySavingsKwh, 1, 2)} + ' kWh/month'"></strong>
+            </p>
+            <p>
+                Implementation cost:
+                <strong th:text="'₹' + ${#numbers.formatDecimal(r.implementationCost, 1, 2)}"></strong>
+            </p>
+        </article>
+
+        <p th:if="${#lists.isEmpty(recommendations)}">
+            No recommendations added yet.
+        </p>
+    </section>
+
+    <p class="muted">
+        Savings and payback are estimates. The bill's average cost per kWh
+        may not equal the actual marginal tariff because of fixed charges,
+        slabs, taxes and other adjustments. Avoid double-counting savings
+        across recommendations.
+    </p>
+</main>
+</body>
+</html>
